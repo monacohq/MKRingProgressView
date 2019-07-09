@@ -178,11 +178,11 @@ open class RingProgressLayer: CALayer {
         
         // Draw backdrop circle
         
-        context.addPath(circlePath.cgPath)
-        let bgColor = backgroundRingColor ?? startColor.copy(alpha: 0.15)!
-        context.setStrokeColor(bgColor)
-        context.strokePath()
-        
+        //        context.addPath(circlePath.cgPath)
+        //        let bgColor = backgroundRingColor ?? startColor.copy(alpha: 0.15)!
+        //        context.setStrokeColor(bgColor)
+        //        context.strokePath()
+        //
         // Draw solid arc
         
         if angle > maxAngle {
@@ -200,6 +200,51 @@ open class RingProgressLayer: CALayer {
             context.translateBy(x: circleRect.midX, y: circleRect.midY)
             context.rotate(by: offset)
             context.translateBy(x: -circleRect.midX, y: -circleRect.midY)
+        }
+        
+        // Draw gradient arc
+        
+        let gradient: CGImage? = {
+            guard useGradient else {
+                return nil
+            }
+            let s = Float(1.5 * w / (2 * .pi * r))
+            gradientGenerator.scale = gradientImageScale
+            gradientGenerator.size = gradientRect.size
+            gradientGenerator.colors = [endColor, endColor, startColor, startColor]
+            gradientGenerator.locations = [0.0, s, 1.0 - s, 1.0]
+            gradientGenerator.endPoint = CGPoint(x: 0.5 - CGFloat(2 * s), y: 1.0)
+            return gradientGenerator.image()
+        }()
+        
+        if p > 0.0 {
+            let arc1Path = UIBezierPath(arcCenter: c,
+                                        radius: r,
+                                        startAngle: -angleOffset,
+                                        endAngle: angle1,
+                                        clockwise: true)
+            if let gradient = gradient {
+                context.saveGState()
+                
+                context.addPath(CGPath(__byStroking: arc1Path.cgPath,
+                                       transform: nil,
+                                       lineWidth: w,
+                                       lineCap: progressStyle.lineCap,
+                                       lineJoin: progressStyle.lineJoin,
+                                       miterLimit: 0)!)
+                context.clip()
+                
+                context.interpolationQuality = .none
+                context.draw(gradient, in: gradientRect)
+                
+                context.restoreGState()
+            } else {
+                context.setStrokeColor(startColor)
+                context.setLineWidth(w)
+                context.setLineCap(progressStyle.lineCap)
+                context.addPath(arc1Path.cgPath)
+                context.strokePath()
+            }
         }
         
         // Draw shadow and progress end
@@ -253,55 +298,10 @@ open class RingProgressLayer: CALayer {
                 return startColor.copy(alpha: p / fadeStartProgress)!
             }()
             context.addPath(shadowPath.cgPath)
-            context.setFillColor(shadowFillColor)
+            context.setFillColor(UIColor.white.cgColor)
             context.fillPath()
             
             context.restoreGState()
-        }
-        
-        // Draw gradient arc
-        
-        let gradient: CGImage? = {
-            guard useGradient else {
-                return nil
-            }
-            let s = Float(1.5 * w / (2 * .pi * r))
-            gradientGenerator.scale = gradientImageScale
-            gradientGenerator.size = gradientRect.size
-            gradientGenerator.colors = [endColor, endColor, startColor, startColor]
-            gradientGenerator.locations = [0.0, s, 1.0 - s, 1.0]
-            gradientGenerator.endPoint = CGPoint(x: 0.5 - CGFloat(2 * s), y: 1.0)
-            return gradientGenerator.image()
-        }()
-        
-        if p > 0.0 {
-            let arc1Path = UIBezierPath(arcCenter: c,
-                                        radius: r,
-                                        startAngle: -angleOffset,
-                                        endAngle: angle1,
-                                        clockwise: true)
-            if let gradient = gradient {
-                context.saveGState()
-                
-                context.addPath(CGPath(__byStroking: arc1Path.cgPath,
-                                       transform: nil,
-                                       lineWidth: w,
-                                       lineCap: progressStyle.lineCap,
-                                       lineJoin: progressStyle.lineJoin,
-                                       miterLimit: 0)!)
-                context.clip()
-                
-                context.interpolationQuality = .none
-                context.draw(gradient, in: gradientRect)
-                
-                context.restoreGState()
-            } else {
-                context.setStrokeColor(startColor)
-                context.setLineWidth(w)
-                context.setLineCap(progressStyle.lineCap)
-                context.addPath(arc1Path.cgPath)
-                context.strokePath()
-            }
         }
     }
 }
