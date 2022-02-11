@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.author = 'Max Konovalov'
   s.source = { git: 'https://github.com/maxkonovalov/MKRingProgressView.git', tag: s.version.to_s }
 
-  s.source_files = 'MKRingProgressView/**/*.swift'
+  s.source_files = 'Sources/MKRingProgressView/**/*.swift'
 
   s.ios.deployment_target = '8.2'
   s.tvos.deployment_target = '9.0'
